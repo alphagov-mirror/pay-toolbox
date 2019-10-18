@@ -76,7 +76,7 @@ if (config.common.development) {
     level: 'debug',
     format: combine(
       format(info => Object.assign(info, { toolboxId: session.get(TOOLBOX_ID_KEY) }))(),
-      timestamp({ format: 'HH:mm:ss' }),
+      timestamp({ format: 'HH:mm:ss', alias: '@timestamp' }),
       format.colorize(),
       format.simple()
     )
