@@ -48,6 +48,14 @@ const ledgerMethods = function ledgerMethods(instance) {
       .then(utilExtractData)
   }
 
+  const relatedTransactions = async function relatedTransactions(id, accountId) {
+    const params = {
+      gateway_account_id: accountId
+    }
+    return axiosInstance.get(`/v1/transaction/${id}/transaction`, { params })
+      .then(utilExtractData)
+  }
+
   const events = function events(transactionId, accountId) {
     return axiosInstance.get(`/v1/transaction/${transactionId}/event?gateway_account_id=${accountId}&${includeAllEventsQuery}`)
       .then(utilExtractData)
@@ -93,7 +101,12 @@ const ledgerMethods = function ledgerMethods(instance) {
   }
 
   return {
-    transaction, transactions, events, getPaymentsByState, paymentStatistics
+    transaction,
+    transactions,
+    relatedTransactions,
+    events,
+    getPaymentsByState,
+    paymentStatistics
   }
 }
 
