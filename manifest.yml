@@ -1,0 +1,24 @@
+---
+applications:
+  - name: toolbox
+    health-check-type: http
+    health-check-http-endpoint: '/healthcheck'
+    health-check-invocation-timeout: 5
+    memory: 256M
+    disk_quota: 1G
+    env:
+      NODE_ENV: production
+      HTTP_PROXY: ((http_proxy_enabled))
+      HTTPS_PROXY: ((http_proxy_host))
+      ADMINUSERS_URL: http://adminusers-((space)).apps.internal:8080
+      CONNECTOR_URL: http://card-connector-((space)).apps.internal:8080 
+      DIRECT_DEBIT_CONNECTOR_URL: http://directdebit-connector-((space)).apps.internal:8080
+      PRODUCTS_URL: http://products-((space)).apps.internal:8080
+      PUBLIC_AUTH_URL: https://((publicauth_url))/v1/frontend/auth
+      LEDGER_URL: http://ledger-((space)).apps.internal:8080
+      DISABLE_REQUEST_LOGGING: ((disable_request_logging))
+      SENTRY_DSN: ((sentry_dsn))
+      AUTH_GITHUB_ENABLED: ((auth_github_enabled))
+      AUTH_GITHUB_TEAM_ID: ((auth_github_team_id))
+      AUTH_GITHUB_ADMIN_TEAM_ID: ((auth_github_admin_team_id))
+     
