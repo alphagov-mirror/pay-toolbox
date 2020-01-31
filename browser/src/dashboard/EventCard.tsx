@@ -103,7 +103,7 @@ export class EventCard extends React.Component<EventCardProps, {}> {
     return (
       <div>
         <OpacitySpring>
-          <div className="event-card govuk-!-margin-bottom-2" style={{ backgroundColor: profile.backgroundColour }}>
+          <div className="event-card govuk-!-margin-bottom-2" style={{ backgroundColor: profile.backgroundColour, transition: 'all 1s ease-in-out' }}>
             <div style={{ textAlign: 'right', width: '100%' }}>
               <span className="govuk-body-s" style={{ color: profile.colour, opacity: 0.7 }}>
                 {this.props.event.service_name}
