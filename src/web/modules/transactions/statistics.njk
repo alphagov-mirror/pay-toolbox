@@ -8,7 +8,7 @@
       <span>GOV.UK Pay platform</span>
     {% endif %}
   </span>
-  <h1 class="govuk-heading-m">Statistics</h1>
+  <h1 class="govuk-heading-m">Payments</h1>
   <div class="transactions-filter__container govuk-body">
     {% for period in ["today", "week", "month"] %}
       <a
@@ -19,21 +19,6 @@
     {% endfor %}
   </div>
   <div class="govuk-body">
-
-    <div class="govuk-grid-row">
-      <div class="govuk-grid-column-one-half">
-        <div class = "center">
-          <h1>{{results.payments}}</h1>
-          <span>Total Payments</span>
-        </div>
-      </div>
-      <div class="govuk-grid-column-one-half">
-        <div class = "center">
-          <h1>{{results.gross | currency}}</h1>
-          <span>Gross</span>
-        </div>
-      </div>
-    </div>
     <div class="govuk-grid-row">
       <div class="govuk-grid-column-one-third">
         <div class = "center">
@@ -53,6 +38,36 @@
           <span>In Progress</span>
         </div>
       </div>
+    </div>
+
+    <div>      
+      <h1 class="govuk-heading-m">Statistics</h1>
+      <table class="govuk-table">
+        <tbody class="govuk-table__body">
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Payments</th>
+            <td class="govuk-table__cell">{{results.payments}}</td>
+          </tr>
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Total Amount</th>
+            <td class="govuk-table__cell">{{results.gross | currency}}</td>
+          </tr>
+        {% if results.include_moto_statistics %}
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Moto Payments</th>
+            <td class="govuk-table__cell">{{results.motoPayments}}</td>
+          </tr>
+        {% endif %}
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Refunds</th>
+            <td class="govuk-table__cell">{{results.refunds}}</td>
+          </tr>
+          <tr class="govuk-table__row">
+            <th class="govuk-table__header" scope="col">Net income</th>
+            <td class="govuk-table__cell">{{results.netIncome | currency}}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 {% endblock %}
