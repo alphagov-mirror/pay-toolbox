@@ -19,6 +19,7 @@ import * as config from '../../../config'
 import Stripe from 'stripe'
 import HTTPSProxyAgent from 'https-proxy-agent'
 import { format } from './csv'
+const { services } = require('../../../config')
 
 const stripe = new Stripe(process.env.STRIPE_ACCOUNT_API_KEY)
 stripe.setApiVersion('2018-09-24')
@@ -166,13 +167,27 @@ const writeAccount = async function writeAccount(req: Request, res: Response): P
     }
   }
 
+  const stripeStatementDetails: {[key: string]: string} = {
+    payoutStatementDescriptor: '',
+    statementDescriptor: ''
+  } 
+
+  if (account.provider === 'stripe'){
+    const stripeAccountDetails = await stripe.accounts.retrieve(account.credentials);
+    stripeStatementDetails.payoutStatementDescriptor =  stripeAccountDetails.payout_statement_descriptor
+    stripeStatementDetails.statementDescriptor =  stripeAccountDetails.statement_descriptor
+  }
+
   // note payment_provider is not returned in the object returned from createAccount
   res.render('gateway_accounts/createSuccess', {
     account: createdAccount,
     linkedService,
     gatewayAccountIdDerived,
     provider: account.provider,
-    isLive: account.isLive()
+    isLive: account.isLive(),
+    isStripe: account.provider === 'stripe' ? true : false,
+    stripeStatementDetails,
+    baseGoLiveUrl: services.SELFSERVICE_URL
   })
 }
 
