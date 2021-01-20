@@ -71,38 +71,21 @@ const overview = async function overview(req: Request, res: Response): Promise<v
     messages: req.flash('info'),
     filters,
     total: accounts.length.toLocaleString(),
-    csvUrl: `gateway_accounts/csv?${stringify(filters)}`
+    csvUrl: `gateway_accounts/csv?${stringify(filters)}`,
+    csvWithAdminEmailsUrl: `gateway_accounts/csvWithAdminEmails?${stringify(filters)}`
   })
 }
 
+const listCSVWithAdminEmails = async function listCSVWithAdminEmails(req: Request, res: Response): Promise<void> {
+  const { filters, combinedData } = await createCsvData(req, true)
+
+  res.set('Content-Type', 'text/csv')
+  res.set('Content-Disposition', `attachment; filename="GOVUK_Pay_gateway_accounts_with_admin_emails_${stringify(filters)}.csv"`)
+  res.status(200).send(format(combinedData))
+}
+
 const listCSV = async function listCSV(req: Request, res: Response): Promise<void> {
-  const query = parse(req.query)
-  const filters = extractFiltersFromQuery(query)
-  const searchParams = toAccountSearchParams(filters)
-  const servicesRequest = AdminUsers.services()
-  const accountsRequest = Connector.accounts(searchParams).then((response: any) => response.accounts)
-
-  const [serviceResponse, accountsResponse] = await Promise.all([servicesRequest, accountsRequest])
-
-  const serviceGatewayAccountIndex = aggregateServicesByGatewayAccountId(serviceResponse)
-
-  const combinedData = accountsResponse
-    .filter((account: GatewayAccount) => serviceGatewayAccountIndex[account.gateway_account_id] != undefined)
-    .map((account: GatewayAccount) => {
-      const service = serviceGatewayAccountIndex[account.gateway_account_id]
-      return {
-        account,
-        service,
-        payment_email_enabled: account.email_notifications['PAYMENT_CONFIRMED'] && account.email_notifications['PAYMENT_CONFIRMED'].enabled || false,
-        refund_email_emailed: account.email_notifications['REFUND_ISSUED'] && account.email_notifications['REFUND_ISSUED'].enabled || false,
-        custom_branding: service.custom_branding !== undefined,
-        email_branding: account.notify_settings !== undefined,
-        corporate_surcharge: account.corporate_prepaid_credit_card_surcharge_amount
-          + account.corporate_prepaid_debit_card_surcharge_amount
-          + account.corporate_credit_card_surcharge_amount
-          + account.corporate_debit_card_surcharge_amount !== 0
-      }
-    })
+  const { filters, combinedData } = await createCsvData(req, false)
 
   res.set('Content-Type', 'text/csv')
   res.set('Content-Disposition', `attachment; filename="GOVUK_Pay_gateway_accounts_${stringify(filters)}.csv"`)
@@ -435,11 +418,10 @@ const searchRequest = async function searchRequest(req: Request, res: Response):
   res.redirect(`/gateway_accounts/${accountId}`)
 }
 
-
-
 export default {
   overview: wrapAsyncErrorHandler(overview),
   listCSV: wrapAsyncErrorHandler(listCSV),
+  listCSVWithAdminEmails: wrapAsyncErrorHandler(listCSVWithAdminEmails),
   overviewDirectDebit: wrapAsyncErrorHandler(overviewDirectDebit),
   create: wrapAsyncErrorHandler(create),
   confirm: wrapAsyncErrorHandler(confirm),
@@ -460,5 +442,59 @@ export default {
   updateStripePayoutDescriptor: wrapAsyncErrorHandler(updateStripePayoutDescriptor),
   search: wrapAsyncErrorHandler(search),
   searchRequest: wrapAsyncErrorHandler(searchRequest)
+}
+
+async function createCsvData(req: Request, withAdminEmails: Boolean) {
+  const query = parse(req.query)
+  const filters = extractFiltersFromQuery(query)
+  const searchParams = toAccountSearchParams(filters)
+  const servicesRequest = AdminUsers.services()
+  const accountsRequest = Connector.accounts(searchParams).then((response: any) => response.accounts)
+
+  const [serviceResponse, accountsResponse] = await Promise.all([servicesRequest, accountsRequest])
+ 
+  const serviceGatewayAccountIndex = aggregateServicesByGatewayAccountId(serviceResponse)
+  let combinedData
+  if (withAdminEmails) {
+    const gatewayAccountToAdminEmails = Connector.adminEmailsForGatewayAccounts(accountsResponse.accounts.map((account: GatewayAccount) => account.gateway_account_id))
+    combinedData = accountsResponse
+      .filter((account: GatewayAccount) => serviceGatewayAccountIndex[account.gateway_account_id] != undefined)
+      .map((account: GatewayAccount) => {
+        const service = serviceGatewayAccountIndex[account.gateway_account_id]
+        return {
+          account,
+          service,
+          payment_email_enabled: account.email_notifications['PAYMENT_CONFIRMED'] && account.email_notifications['PAYMENT_CONFIRMED'].enabled || false,
+          refund_email_emailed: account.email_notifications['REFUND_ISSUED'] && account.email_notifications['REFUND_ISSUED'].enabled || false,
+          custom_branding: service.custom_branding !== undefined,
+          email_branding: account.notify_settings !== undefined,
+          corporate_surcharge: account.corporate_prepaid_credit_card_surcharge_amount
+            + account.corporate_prepaid_debit_card_surcharge_amount
+            + account.corporate_credit_card_surcharge_amount
+            + account.corporate_debit_card_surcharge_amount !== 0,
+          admin_emails: gatewayAccountToAdminEmails[account.gateway_account_id]
+        }
+      })
+  } else {
+    combinedData = accountsResponse
+      .filter((account: GatewayAccount) => serviceGatewayAccountIndex[account.gateway_account_id] != undefined)
+      .map((account: GatewayAccount) => {
+        const service = serviceGatewayAccountIndex[account.gateway_account_id]
+        return {
+          account,
+          service,
+          payment_email_enabled: account.email_notifications['PAYMENT_CONFIRMED'] && account.email_notifications['PAYMENT_CONFIRMED'].enabled || false,
+          refund_email_emailed: account.email_notifications['REFUND_ISSUED'] && account.email_notifications['REFUND_ISSUED'].enabled || false,
+          custom_branding: service.custom_branding !== undefined,
+          email_branding: account.notify_settings !== undefined,
+          corporate_surcharge: account.corporate_prepaid_credit_card_surcharge_amount
+            + account.corporate_prepaid_debit_card_surcharge_amount
+            + account.corporate_credit_card_surcharge_amount
+            + account.corporate_debit_card_surcharge_amount !== 0
+        }
+      })
+  }
+
+  return { filters, combinedData }
 }
 
